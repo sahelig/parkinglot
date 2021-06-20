@@ -5,6 +5,8 @@ import com.saheli.parkinglot.domain.impl.CompactParkingSpot;
 import com.saheli.parkinglot.domain.impl.LargeParkingSpot;
 import com.saheli.parkinglot.domain.impl.MotorcycleParkingSpot;
 import com.saheli.parkinglot.domain.impl.ParkingLevel;
+import com.saheli.parkinglot.exception.InvalidParkingSlotRequestException;
+import com.saheli.parkinglot.exception.ParkingLevelNotAvailableException;
 import com.saheli.parkinglot.request.ParkingSpotAddRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +27,7 @@ public class ParkingLevelMaintenanceService {
         this.parkingLevelList = parkingLevelList;
     }
 
-    public void addSpot(ParkingSpotAddRequest parkingSpotAddRequest) {
+    public void addSpot(ParkingSpotAddRequest parkingSpotAddRequest) throws InvalidParkingSlotRequestException, ParkingLevelNotAvailableException {
 
         Optional<ParkingLevel> parkingLevel = parkingLevelList.stream().filter(level ->
                 parkingSpotAddRequest.getLevel() == level.getFloorNumber()).findAny();
@@ -33,7 +35,7 @@ public class ParkingLevelMaintenanceService {
 
         if (!parkingLevel.isPresent()) {
             log.info("Parking level does not exist!");
-            throw new RuntimeException("No such level!");
+            throw new ParkingLevelNotAvailableException("No such level!");
         }
 
         ParkingLevel parkingLevelToAddSpot = parkingLevel.get();
@@ -41,7 +43,7 @@ public class ParkingLevelMaintenanceService {
         if (parkingSpotAddRequest.getSlotNumber() != parkingLevelToAddSpot
                 .getParkingSpotsForFloor().size() + 1) {
             log.info("Cannot add a non-continuous parking slot!");
-            throw new RuntimeException("Non continuous parking slot!");
+            throw new InvalidParkingSlotRequestException("Non continuous parking slot!");
         }
 
         ParkingSpot parkingSlot = buildParkingSlot(parkingLevelToAddSpot, parkingSpotAddRequest);

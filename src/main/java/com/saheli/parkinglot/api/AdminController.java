@@ -1,8 +1,11 @@
 package com.saheli.parkinglot.api;
 
+import com.saheli.parkinglot.exception.InvalidParkingSlotRequestException;
+import com.saheli.parkinglot.exception.ParkingLevelNotAvailableException;
 import com.saheli.parkinglot.request.ParkingSpotAddRequest;
 import com.saheli.parkinglot.service.ParkingLevelMaintenanceService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,8 +25,16 @@ public class AdminController {
 
     @PostMapping("/addspot")
     @ResponseBody
-    public String addSpot(@RequestBody ParkingSpotAddRequest parkingSpotAddRequest) {
-        parkingLevelMaintenanceService.addSpot(parkingSpotAddRequest);
-        return parkingSpotAddRequest.toString();
+    public ResponseEntity addSpot(@RequestBody ParkingSpotAddRequest parkingSpotAddRequest) {
+        try {
+
+            parkingLevelMaintenanceService.addSpot(parkingSpotAddRequest);
+            return ResponseEntity.noContent().build();
+
+        } catch (ParkingLevelNotAvailableException | InvalidParkingSlotRequestException
+                ex) {
+
+            return ResponseEntity.badRequest().body(ex.getMessage());
+        }
     }
 }
