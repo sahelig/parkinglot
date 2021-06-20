@@ -16,11 +16,11 @@ import java.util.Map;
 @Data
 @Slf4j
 @NoArgsConstructor
-@ToString
 public class ParkingLevel {
 
     private int floorNumber;
     private volatile List<ParkingSpot> parkingSpotsForFloor = new ArrayList<>();
+    @ToString.Exclude
     private volatile Map<String, Vehicle> vehiclesOnFloorCurrently = new HashMap<>();
 
     ParkingLevel(int floorNumber) {
@@ -134,6 +134,19 @@ public class ParkingLevel {
         }
 
         return -1;
+    }
+
+    @Override
+    public String toString() {
+
+        StringBuilder str = new StringBuilder().append("Updated Display Board for parking level: " + floorNumber +
+                "\n");
+        for (ParkingSpot spot : parkingSpotsForFloor) {
+            str.append("\n");
+            str.append(spot);
+        }
+
+        return str.toString();
     }
 
 
