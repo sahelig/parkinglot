@@ -5,23 +5,29 @@ import com.saheli.parkinglot.domain.Vehicle;
 import com.saheli.parkinglot.enums.ParkingSpotCategory;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @Slf4j
 @NoArgsConstructor
+@ToString
 public class ParkingLevel {
 
     private int floorNumber;
-    private List<ParkingSpot> parkingSpotsForFloor;
+    private volatile List<ParkingSpot> parkingSpotsForFloor = new ArrayList<>();
+    private volatile Map<String, Vehicle> vehiclesOnFloorCurrently = new HashMap<>();
 
     ParkingLevel(int floorNumber) {
         this.floorNumber = floorNumber;
     }
 
-    public int isSlotAvailable(Vehicle vehicle) {
+    public synchronized int parkVehicle(Vehicle vehicle) {
 
         boolean atleastOneAvailableSlot = parkingSpotsForFloor.stream().anyMatch(spot -> !spot.isOccupied());
 
@@ -29,29 +35,54 @@ public class ParkingLevel {
             return -1;
         }
 
-        List<SlotOptions> slotOptions = vehicle.getSlotOptions();
+        List<SlotOption> slotOptions = vehicle.getSlotOptions();
         int slotStart = -1;
+        SlotOption slot = null;
 
-        for (SlotOptions slotOption : slotOptions) {
+        for (SlotOption slotOption : slotOptions) {
             slotStart = startOfContiguousSlotsAvailableOnLevel(slotOption.numOfSlots, slotOption.category);
             if (slotStart != -1) {
+                slot = slotOption;
                 log.info("Slot obtained from :" + slotStart);
                 break;
             }
         }
 
+        if (slotStart != -1) {
+            log.info("Slot found, try and assign vehicle");
+            assignVehicleToSpot(vehicle, slotStart, slot.numOfSlots);
+        }
+
         return slotStart;
     }
 
-    public void assignVehicleToSpot(Vehicle vehicle, int startSlotNumber, int numOfSlotsReq) {
-        for (int i = startSlotNumber; i <= (startSlotNumber + numOfSlotsReq); i++) {
-            log.info("Assigning vehicle " + vehicle + " to slot " + parkingSpotsForFloor.get(i));
-            parkingSpotsForFloor.get(i).assignVehicle(vehicle);
-            vehicle.addToParkingSpot(parkingSpotsForFloor.get(i));
+    public synchronized boolean locateAndRemoveVehicle(String licenseNumberOfVehicle) {
+
+        if (!vehiclesOnFloorCurrently.containsKey(licenseNumberOfVehicle)) {
+            return false;
         }
+
+        removeVehicleFromSpot(vehiclesOnFloorCurrently.get(licenseNumberOfVehicle));
+        return true;
     }
 
-    public void removeVehicleFromSpot(Vehicle vehicle) {
+    private synchronized void assignVehicleToSpot(Vehicle vehicle, int startSlotNumber, int
+            numOfSlotsReq) {
+        for (int i = 0; i < numOfSlotsReq; i++) {
+            int index = i + startSlotNumber - 1;
+            log.info("Assigning vehicle " + vehicle + " to slot " + parkingSpotsForFloor.get(index));
+
+            ParkingSpot parkingSpot = parkingSpotsForFloor.get(index);
+            parkingSpot.assignVehicle(vehicle);
+
+            vehicle.addToParkingSpot(parkingSpot);
+            vehicle.addToLevel(floorNumber);
+        }
+
+        vehiclesOnFloorCurrently.put(vehicle.getLicenceNumber(), vehicle);
+    }
+
+    public synchronized void removeVehicleFromSpot(Vehicle vehicle) {
         List<ParkingSpot> currentlyParkedAt = vehicle.getCurrentlyParkedAt();
 
         for (ParkingSpot parkingSpot : currentlyParkedAt) {
@@ -59,6 +90,9 @@ public class ParkingLevel {
         }
 
         vehicle.getCurrentlyParkedAt().removeAll(currentlyParkedAt);
+        vehicle.setCurrentLevel(-1);
+
+        vehiclesOnFloorCurrently.remove(vehicle.getLicenceNumber());
     }
 
 
@@ -68,22 +102,33 @@ public class ParkingLevel {
             return -1;
         }
 
-        int conseq = 1;
+        int conseq = 0;
         int prev = parkingSpotsForFloor.get(0).getNumber();
+        int prevRow = parkingSpotsForFloor.get(0).getNumber();
+        int startOfThisSlot = -1;
 
         for (ParkingSpot parkingSpot : parkingSpotsForFloor) {
 
-            if (parkingSpot.getNumber() == prev + 1 && !parkingSpot.isOccupied() && parkingSpotCategory.equals(parkingSpot.getCategory())) {
+            ParkingSpotCategory category = parkingSpot.getCategory();
+            if (parkingSpot.getNumber() == prev + 1
+                    && parkingSpot.getRowNumber() == prevRow
+                    && !parkingSpot.isOccupied()
+                    && parkingSpotCategory.equals(category)) {
                 conseq++;
-            } else {
+            } else if (!parkingSpot.isOccupied() && parkingSpotCategory.equals(category)) {
                 conseq = 1;
             }
 
+            if (conseq == 1) {
+                startOfThisSlot = parkingSpot.getNumber();
+            }
+
             prev = parkingSpot.getNumber();
+            prevRow = parkingSpot.getRowNumber();
 
             if (conseq == requiredSlots) {
                 log.info(requiredSlots + " consecutive slots found, starting from " + parkingSpot.getNumber());
-                return parkingSpot.getNumber();
+                return startOfThisSlot;
             }
 
         }

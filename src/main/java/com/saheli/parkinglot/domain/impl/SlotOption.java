@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 
 @AllArgsConstructor
 @NoArgsConstructor
-public class SlotOptions {
+public class SlotOption {
 
     int numOfSlots;
     ParkingSpotCategory category;

@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class CarParkRequest {
+public class ParkRequest {
 
     private VehicleType type;
     private String licensePlate;

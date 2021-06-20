@@ -5,15 +5,11 @@ import com.saheli.parkinglot.enums.ParkingSpotCategory;
 import com.saheli.parkinglot.enums.VehicleType;
 
 import java.util.Arrays;
-import java.util.List;
 
 public class Bus extends Vehicle {
 
     public Bus() {
-        super(VehicleType.BUS);
+        super(VehicleType.BUS, Arrays.asList(new SlotOption(5, ParkingSpotCategory.LARGE_SPOT)));
     }
 
-    public List<SlotOptions> getSlotOptions() {
-        return Arrays.asList(new SlotOptions(5, ParkingSpotCategory.LARGE_SPOT));
-    }
 }

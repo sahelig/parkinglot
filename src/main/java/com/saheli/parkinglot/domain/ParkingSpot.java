@@ -6,6 +6,8 @@ public interface ParkingSpot {
 
     int getNumber();
 
+    int getRowNumber();
+
     boolean isOccupied();
 
     ParkingSpotCategory getCategory();
