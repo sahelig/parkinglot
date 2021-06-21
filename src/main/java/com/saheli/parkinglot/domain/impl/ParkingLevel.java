@@ -29,6 +29,12 @@ public class ParkingLevel {
 
     public synchronized ParkingSpot parkVehicle(Vehicle vehicle) {
 
+        if (vehiclesOnFloorCurrently.containsKey(vehicle.getLicenceNumber())) {
+            log.info("Vehicle already parked, duplicate request receievd");
+            return vehiclesOnFloorCurrently.get(vehicle.getLicenceNumber())
+                    .getCurrentlyParkedAt().get(0);
+        }
+
         boolean atleastOneAvailableSlot = parkingSpotsForFloor.stream().anyMatch(spot -> !spot.isOccupied());
 
         if (!atleastOneAvailableSlot) {

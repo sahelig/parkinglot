@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.validation.Valid;
+
 @Controller
 @RequestMapping("v1/parkinglot/")
 public class AdminController {
@@ -25,7 +27,7 @@ public class AdminController {
 
     @PostMapping("/addspot")
     @ResponseBody
-    public ResponseEntity addSpot(@RequestBody ParkingSpotAddRequest parkingSpotAddRequest) {
+    public ResponseEntity addSpot(@RequestBody @Valid ParkingSpotAddRequest parkingSpotAddRequest) {
         try {
 
             parkingLevelMaintenanceService.addSpot(parkingSpotAddRequest);
