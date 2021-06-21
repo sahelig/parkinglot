@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Data
-public class Vehicle {
+public abstract class Vehicle {
 
     private String licenceNumber;
     private final VehicleType vehicleType;

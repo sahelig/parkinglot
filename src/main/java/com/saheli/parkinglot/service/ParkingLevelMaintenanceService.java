@@ -12,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,7 +21,7 @@ import java.util.Optional;
 @Slf4j
 public class ParkingLevelMaintenanceService {
 
-    private List<ParkingLevel> parkingLevelList;
+    private volatile List<ParkingLevel> parkingLevelList;
 
 
     @Autowired
@@ -27,7 +29,8 @@ public class ParkingLevelMaintenanceService {
         this.parkingLevelList = parkingLevelList;
     }
 
-    public void addSpot(ParkingSpotAddRequest parkingSpotAddRequest) throws InvalidParkingSlotRequestException, ParkingLevelNotAvailableException {
+    public synchronized void addSpot(ParkingSpotAddRequest parkingSpotAddRequest) throws
+            InvalidParkingSlotRequestException, ParkingLevelNotAvailableException {
 
         Optional<ParkingLevel> parkingLevel = parkingLevelList.stream().filter(level ->
                 parkingSpotAddRequest.getLevel() == level.getFloorNumber()).findAny();
@@ -39,20 +42,37 @@ public class ParkingLevelMaintenanceService {
         }
 
         ParkingLevel parkingLevelToAddSpot = parkingLevel.get();
-
-        if (parkingSpotAddRequest.getSlotNumber() != parkingLevelToAddSpot
-                .getParkingSpotsForFloor().size() + 1) {
-            log.info("Cannot add a non-continuous parking slot!");
-            throw new InvalidParkingSlotRequestException("Non continuous parking slot!");
-        }
-
-        ParkingSpot parkingSlot = buildParkingSlot(parkingLevelToAddSpot, parkingSpotAddRequest);
+        ParkingSpot parkingSlot = buildParkingSlot(parkingSpotAddRequest);
         parkingLevelToAddSpot.getParkingSpotsForFloor().add(parkingSlot);
+
+        //Sort the list of parking slots added so that later the continuous check is easy
+        order(parkingLevelToAddSpot.getParkingSpotsForFloor());
+
     }
 
-    private ParkingSpot buildParkingSlot(ParkingLevel parkingLevelToAddSpot, ParkingSpotAddRequest parkingSpotAddRequest) {
+    private static void order(List<ParkingSpot> parkingSpots) {
+
+        Collections.sort(parkingSpots, (Comparator) (o1, o2) -> {
+
+            int x1 = ((ParkingSpot) o1).getRowNumber();
+            int x2 = ((ParkingSpot) o2).getRowNumber();
+
+
+            if (x1 != x2) {
+                return x1 - x2;
+            }
+
+            x1 = ((ParkingSpot) o1).getColumn();
+            x2 = ((ParkingSpot) o2).getColumn();
+
+            return x1 - x2;
+        });
+    }
+
+    private ParkingSpot buildParkingSlot(ParkingSpotAddRequest parkingSpotAddRequest) {
 
         int rowNumber = parkingSpotAddRequest.getRowNumber();
+        int columnNumber = parkingSpotAddRequest.getColumnNumber();
 
         switch (parkingSpotAddRequest.getCategory()) {
             case LARGE_SPOT:
@@ -60,21 +80,21 @@ public class ParkingLevelMaintenanceService {
                         .isOccupied(false)
                         .licenseOfVehicleParked(null)
                         .rowNumber(rowNumber)
-                        .number(parkingLevelToAddSpot.getParkingSpotsForFloor().size() + 1)
+                        .column(columnNumber)
                         .build();
             case COMPACT_SPOT:
                 return CompactParkingSpot.builder()
                         .isOccupied(false)
                         .licenseOfVehicleParked(null)
                         .rowNumber(rowNumber)
-                        .number(parkingLevelToAddSpot.getParkingSpotsForFloor().size() + 1)
+                        .column(columnNumber)
                         .build();
             case MOTORCYCLE_SPOT:
                 return MotorcycleParkingSpot.builder()
                         .isOccupied(false)
                         .licenseOfVehicleParked(null)
                         .rowNumber(rowNumber)
-                        .number(parkingLevelToAddSpot.getParkingSpotsForFloor().size() + 1)
+                        .column(columnNumber)
                         .build();
         }
 

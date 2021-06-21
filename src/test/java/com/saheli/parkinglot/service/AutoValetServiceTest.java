@@ -1,8 +1,9 @@
 package com.saheli.parkinglot.service;
 
 import com.saheli.parkinglot.domain.Vehicle;
+import com.saheli.parkinglot.domain.impl.Car;
+import com.saheli.parkinglot.domain.impl.LargeParkingSpot;
 import com.saheli.parkinglot.domain.impl.ParkingLevel;
-import com.saheli.parkinglot.enums.VehicleType;
 import com.saheli.parkinglot.exception.ParkingSpaceNotAvailableException;
 import com.saheli.parkinglot.exception.VehicleNotFoundException;
 import com.saheli.parkinglot.mapper.VehicleMapper;
@@ -46,7 +47,7 @@ public class AutoValetServiceTest {
         when(parkingLevel2.getFloorNumber()).thenReturn(2);
 
         parkRequest = new ParkRequest();
-        vehicle = new Vehicle(VehicleType.CAR, Collections.emptyList());
+        vehicle = new Car();
         when(vehicleMapper.fromCarParkRequest(parkRequest)).thenReturn(vehicle);
 
         vacateRequest = new VacateRequest();
@@ -62,7 +63,7 @@ public class AutoValetServiceTest {
 
     @Test
     public void ParkingAvailableInLevel1() throws ParkingSpaceNotAvailableException {
-        when(parkingLevel1.parkVehicle(vehicle)).thenReturn(1);
+        when(parkingLevel1.parkVehicle(vehicle)).thenReturn(new LargeParkingSpot(1, 1));
         autoValetService = new AutoValetService(Arrays.asList(parkingLevel1, parkingLevel2),
                 vehicleMapper);
 
@@ -73,8 +74,8 @@ public class AutoValetServiceTest {
 
     @Test
     public void ParkingAvailableInLevel2() throws ParkingSpaceNotAvailableException {
-        when(parkingLevel1.parkVehicle(vehicle)).thenReturn(-1);
-        when(parkingLevel2.parkVehicle(vehicle)).thenReturn(2);
+        when(parkingLevel1.parkVehicle(vehicle)).thenReturn(null);
+        when(parkingLevel2.parkVehicle(vehicle)).thenReturn(new LargeParkingSpot(1, 1));
         autoValetService = new AutoValetService(Arrays.asList(parkingLevel1, parkingLevel2),
                 vehicleMapper);
 

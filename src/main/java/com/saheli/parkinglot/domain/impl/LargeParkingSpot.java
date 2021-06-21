@@ -12,13 +12,13 @@ import lombok.Data;
 @AllArgsConstructor
 public class LargeParkingSpot implements ParkingSpot {
 
-    private final int number;
     private final int rowNumber;
+    private final int column;
     private volatile boolean isOccupied;
     private volatile String licenseOfVehicleParked;
 
-    public LargeParkingSpot(int number, int rowNumber) {
-        this.number = number;
+    public LargeParkingSpot(int column, int rowNumber) {
+        this.column = column;
         this.rowNumber = rowNumber;
     }
 

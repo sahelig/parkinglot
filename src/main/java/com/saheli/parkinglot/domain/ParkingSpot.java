@@ -4,9 +4,11 @@ import com.saheli.parkinglot.enums.ParkingSpotCategory;
 
 public interface ParkingSpot {
 
-    int getNumber();
+    int getColumn();
 
     int getRowNumber();
+
+    String getLicenseOfVehicleParked();
 
     boolean isOccupied();
 

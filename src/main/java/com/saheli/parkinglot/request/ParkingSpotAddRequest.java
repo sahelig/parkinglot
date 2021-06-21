@@ -10,7 +10,7 @@ public class ParkingSpotAddRequest {
 
     private ParkingSpotCategory category;
     private int level;
-    private int slotNumber;
     private int rowNumber;
+    private int columnNumber;
 
 }

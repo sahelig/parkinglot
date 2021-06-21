@@ -1,5 +1,6 @@
 package com.saheli.parkinglot.service;
 
+import com.saheli.parkinglot.domain.ParkingSpot;
 import com.saheli.parkinglot.domain.Vehicle;
 import com.saheli.parkinglot.domain.impl.ParkingLevel;
 import com.saheli.parkinglot.exception.ParkingSpaceNotAvailableException;
@@ -34,9 +35,9 @@ public class AutoValetService {
         Vehicle vehicle = vehicleMapper.fromCarParkRequest(parkRequest);
 
         Optional<ParkingLevel> firstAvailableParkingLevel = parkingLevelList.stream().filter(parkingLevel -> {
-            int slot = parkingLevel.parkVehicle(vehicle);
-            log.info("Parked vehicle={} at slot={} ", slot);
-            return slot != -1;
+            ParkingSpot spot = parkingLevel.parkVehicle(vehicle);
+            log.info("Parked vehicle={} at spot={} ", spot);
+            return spot != null;
         }).findFirst();
 
         if (!firstAvailableParkingLevel.isPresent()) {
