@@ -1,6 +1,7 @@
 package com.saheli.parkinglot.service;
 
 import com.saheli.parkinglot.domain.ParkingSpot;
+import com.saheli.parkinglot.domain.Spot;
 import com.saheli.parkinglot.domain.impl.CompactParkingSpot;
 import com.saheli.parkinglot.domain.impl.LargeParkingSpot;
 import com.saheli.parkinglot.domain.impl.MotorcycleParkingSpot;
@@ -8,20 +9,19 @@ import com.saheli.parkinglot.domain.impl.ParkingLevel;
 import com.saheli.parkinglot.exception.InvalidParkingSlotRequestException;
 import com.saheli.parkinglot.exception.ParkingLevelNotAvailableException;
 import com.saheli.parkinglot.request.ParkingSpotAddRequest;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @Slf4j
+@Data
 public class ParkingLevelMaintenanceService {
 
-    private volatile List<ParkingLevel> parkingLevelList;
+    private volatile List<ParkingLevel> parkingLevelList = new ArrayList<>();
 
 
     @Autowired
@@ -42,9 +42,20 @@ public class ParkingLevelMaintenanceService {
         }
 
         ParkingLevel parkingLevelToAddSpot = parkingLevel.get();
+
+
+        Spot spot = new Spot(parkingSpotAddRequest.getRowNumber(), parkingSpotAddRequest.getColumnNumber());
+        boolean slotExists = parkingLevelToAddSpot.getPositionsPresent().contains(spot);
+
+        if (slotExists) {
+            log.info("Duplicate parking slot request for this level!");
+            throw new InvalidParkingSlotRequestException("Duplicate parking slot " +
+                    "request");
+        }
+
         ParkingSpot parkingSlot = buildParkingSlot(parkingSpotAddRequest);
         parkingLevelToAddSpot.getParkingSpotsForFloor().add(parkingSlot);
-
+        parkingLevelToAddSpot.getPositionsPresent().add(spot);
         //Sort the list of parking slots added so that later the continuous check is easy
         order(parkingLevelToAddSpot.getParkingSpotsForFloor());
 

@@ -1,6 +1,7 @@
 package com.saheli.parkinglot.domain.impl;
 
 import com.saheli.parkinglot.domain.ParkingSpot;
+import com.saheli.parkinglot.domain.Spot;
 import com.saheli.parkinglot.domain.Vehicle;
 import com.saheli.parkinglot.enums.ParkingSpotCategory;
 import lombok.Data;
@@ -8,10 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Data
 @Slf4j
@@ -22,8 +20,10 @@ public class ParkingLevel {
     private volatile List<ParkingSpot> parkingSpotsForFloor = new ArrayList<>();
     @ToString.Exclude
     private volatile Map<String, Vehicle> vehiclesOnFloorCurrently = new HashMap<>();
+    @ToString.Exclude
+    private volatile Set<Spot> positionsPresent = new HashSet<>();
 
-    ParkingLevel(int floorNumber) {
+    public ParkingLevel(int floorNumber) {
         this.floorNumber = floorNumber;
     }
 
